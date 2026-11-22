@@ -1,0 +1,54 @@
+import Cvs
+
+/-! Axiom audit: every headline theorem should depend on exactly propext, Classical.choice, Quot.sound. -/
+
+#print axioms Cvs.finite_real_spectrum
+#print axioms Cvs.finite_secular_roots_real
+#print axioms Cvs.even_sector_secular
+#print axioms Cvs.finite_transform_zeroFree
+#print axioms Cvs.exists_zeroFree_even_ground
+#print axioms Cvs.theorem_6_1
+#print axioms Cvs.theorem_6_1_uncentred
+#print axioms Cvs.theorem_6_1_at_sqrt_two
+#print axioms Cvs.hurwitz
+#print axioms Cvs.rh_of_Xi_ne_zero
+#print axioms Cvs.rh_of_limit
+#print axioms Cvs.rh_of_ground
+#print axioms Cvs.xi_eq_fourierLaplace
+#print axioms Cvs.riemannPhi_even
+#print axioms Cvs.poisson_E
+#print axioms Cvs.prolate_eigen
+#print axioms Cvs.prolate_sinc_eigen
+#print axioms Cvs.prolate_lam_lt_one
+#print axioms Cvs.prolate_one_sub_lam_le
+#print axioms Cvs.prolate_stepA
+#print axioms Cvs.bottom_attained
+#print axioms Cvs.weil_matrix
+#print axioms Cvs.rh_iff_weil_positivity
+#print axioms Cvs.rh_iff_approx_weil_positivity
+#print axioms Cvs.weil_nonneg_of_rh
+#print axioms Cvs.rh_iff_posSemidef
+#print axioms Cvs.fact_6_4
+#print axioms Cvs.fact_6_4_error
+#print axioms Cvs.stepA_finite_of_stepA
+#print axioms Cvs.oddAbove_of_stepA
+#print axioms Cvs.rh_of_connes
+#print axioms Cvs.rh_of_stepA_of_tendsto
+#print axioms Cvs.rh_iff_stepA_along_bandwidths
+#print axioms Cvs.weil_deriv_skew
+#print axioms Cvs.weil_operator_selfAdjoint
+#print axioms Cvs.rh_iff_window_test_positivity
+#print axioms Cvs.rh_iff_zero_sample_parseval
+#print axioms Cvs.odd_ground_state_simple
+#print axioms Cvs.minimiser_even_of_lt
+#print axioms Cvs.stepA_circle_even
+#print axioms Cvs.rh_iff_floor_along_scales
+#print axioms Cvs.even_bottom_of_zero_depth
+#print axioms Cvs.Bridge.weil_nonneg
+#print axioms Cvs.Bridge.truncation_posSemidef
+#print axioms Cvs.Bridge.stepAAlong
+#print axioms Cvs.Bridge.connesStepAN_along
+#print axioms Cvs.Bridge.realZeros_along
+#print axioms Cvs.Bridge.depthToZero
+#print axioms Cvs.Bridge.riemannHypothesis_iff
+#print axioms Cvs.Bridge.riemannHypothesis_iff_weil

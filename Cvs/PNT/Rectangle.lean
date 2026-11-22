@@ -1,0 +1,108 @@
+import Mathlib.Analysis.Complex.Convex
+import Mathlib.Analysis.InnerProductSpace.Basic
+import Mathlib.Analysis.Normed.Order.Lattice
+import Mathlib.Order.Interval.Set.Monotone
+
+/-
+Ported from https://github.com/AlexKontorovich/PrimeNumberTheoremAnd
+at commit 6a380f0c4658c04a420a9eb00b1ed62a1e3fde01 (tag v4.32.2), file
+PrimeNumberTheoremAnd/Rectangle.lean.
+Copyright the PrimeNumberTheoremAnd contributors; Apache License 2.0
+(http://www.apache.org/licenses/LICENSE-2.0).
+Local modifications: removed the Architect blueprint tooling (import Architect,
+@[blueprint ...] attributes).
+Re-ported from the
+v4.29.0 port (commit 10e1218932db7e2432aa5881d750acb819e91f19) when the project
+moved to Lean v4.32.2 / Mathlib 905b95818eb32af7874a58b427f50c1711a5e96c.
+Modified 2026 by Anthropic PBC.
+-/
+
+open Complex Set Topology
+
+open scoped Interval
+
+variable {z w : ℂ} {c : ℝ}
+
+namespace Rectangle
+
+end Rectangle
+
+/-- A `RectangleBorder` has corners `z` and `w`. -/
+def RectangleBorder (z w : ℂ) : Set ℂ :=
+  [[z.re, w.re]] ×ℂ {z.im} ∪ {z.re} ×ℂ [[z.im, w.im]] ∪
+    [[z.re, w.re]] ×ℂ {w.im} ∪ {w.re} ×ℂ [[z.im, w.im]]
+
+@[simp]
+theorem preimage_equivRealProdCLM_reProdIm (s t : Set ℝ) :
+    equivRealProdCLM.symm ⁻¹' (s ×ℂ t) = s ×ˢ t :=
+  rfl
+
+@[simp]
+theorem ContinuousLinearEquiv.coe_toLinearEquiv_symm {R : Type*} {S : Type*} [Semiring R]
+    [Semiring S] {σ : R →+* S} {σ' : S →+* R} [RingHomInvPair σ σ'] [RingHomInvPair σ' σ]
+    (M : Type*) [TopologicalSpace M]
+    [AddCommMonoid M] {M₂ : Type*} [TopologicalSpace M₂] [AddCommMonoid M₂] [Module R M]
+    [Module S M₂] (e : M ≃SL[σ] M₂) :
+    ⇑e.toLinearEquiv.symm = e.symm :=
+  rfl
+
+theorem Set.left_not_mem_uIoo {a b : ℝ} : a ∉ Set.uIoo a b :=
+  fun ⟨h1, h2⟩ ↦ (left_lt_sup.mp h2) (le_of_not_ge (inf_lt_left.mp h1))
+
+theorem Set.right_not_mem_uIoo {a b : ℝ} : b ∉ Set.uIoo a b :=
+  fun ⟨h1, h2⟩ ↦ (right_lt_sup.mp h2) (le_of_not_ge (inf_lt_right.mp h1))
+
+theorem Set.ne_left_of_mem_uIoo {a b c : ℝ} (hc : c ∈ Set.uIoo a b) : c ≠ a :=
+  fun h ↦ Set.left_not_mem_uIoo (h ▸ hc)
+
+theorem Set.ne_right_of_mem_uIoo {a b c : ℝ} (hc : c ∈ Set.uIoo a b) : c ≠ b :=
+  fun h ↦ Set.right_not_mem_uIoo (h ▸ hc)
+
+lemma rectangleBorder_subset_rectangle (z w : ℂ) : RectangleBorder z w ⊆ Rectangle z w := by
+  intro x hx
+  obtain ⟨⟨h | h⟩ | h⟩ | h := hx
+  · exact ⟨h.1, h.2 ▸ left_mem_uIcc⟩
+  · exact ⟨h.1 ▸ left_mem_uIcc, h.2⟩
+  · exact ⟨h.1, h.2 ▸ right_mem_uIcc⟩
+  · exact ⟨h.1 ▸ right_mem_uIcc, h.2⟩
+
+lemma rectangleBorder_disjoint_singleton {z w p : ℂ}
+    (h : p.re ≠ z.re ∧ p.re ≠ w.re ∧ p.im ≠ z.im ∧ p.im ≠ w.im) :
+    Disjoint (RectangleBorder z w) {p} := by
+  refine disjoint_singleton_right.mpr ?_
+  simp_rw [RectangleBorder, Set.mem_union, not_or]
+  exact ⟨⟨⟨fun hc ↦ h.2.2.1 hc.2, fun hc ↦ h.1 hc.1⟩, fun hc ↦ h.2.2.2 hc.2⟩,
+    fun hc ↦ h.2.1 hc.1⟩
+
+lemma rectangle_mem_nhds_iff {z w p : ℂ} :
+    Rectangle z w ∈ 𝓝 p ↔ p ∈ (Set.uIoo z.re w.re) ×ℂ (Set.uIoo z.im w.im) := by
+  simp_rw [← mem_interior_iff_mem_nhds, Rectangle, Complex.interior_reProdIm, uIoo, uIcc,
+    interior_Icc]
+
+lemma mapsTo_rectangleBorder_left_re (z w : ℂ) :
+    MapsTo (fun (y : ℝ) => ↑z.re + ↑y * I) [[z.im, w.im]] (RectangleBorder z w) :=
+  (Set.mapsTo_image _ _).mono subset_rfl fun _ ↦
+    by simp_all [verticalSegment_eq, RectangleBorder]
+
+lemma mapsTo_rectangleBorder_right_re (z w : ℂ) :
+    MapsTo (fun (y : ℝ) => ↑w.re + ↑y * I) [[z.im, w.im]] (RectangleBorder z w) :=
+  (Set.mapsTo_image _ _).mono subset_rfl fun _ ↦
+    by simp_all [verticalSegment_eq, RectangleBorder]
+
+lemma mapsTo_rectangleBorder_left_im (z w : ℂ) :
+    MapsTo (fun (x : ℝ) => ↑x + z.im * I) [[z.re, w.re]] (RectangleBorder z w) :=
+  (Set.mapsTo_image _ _).mono subset_rfl fun _ ↦
+    by simp_all [horizontalSegment_eq, RectangleBorder]
+
+lemma mapsTo_rectangleBorder_right_im (z w : ℂ) :
+    MapsTo (fun (x : ℝ) => ↑x + w.im * I) [[z.re, w.re]] (RectangleBorder z w) :=
+  (Set.mapsTo_image _ _).mono subset_rfl fun _ ↦
+    by simp_all [horizontalSegment_eq, RectangleBorder]
+
+theorem not_mem_rectangleBorder_of_rectangle_mem_nhds {z w p : ℂ}
+    (hp : Rectangle z w ∈ 𝓝 p) :
+    p ∉ RectangleBorder z w := by
+  refine Set.disjoint_right.mp (rectangleBorder_disjoint_singleton ?_) rfl
+  have h1 := rectangle_mem_nhds_iff.mp hp
+  exact ⟨Set.ne_left_of_mem_uIoo h1.1, Set.ne_right_of_mem_uIoo h1.1,
+    Set.ne_left_of_mem_uIoo h1.2, Set.ne_right_of_mem_uIoo h1.2⟩

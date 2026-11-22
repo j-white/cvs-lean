@@ -1,0 +1,8 @@
+.lake/
+*.olean
+paper/build/*
+!paper/build/pathlaw.pdf
+paper/numerics/.venv/
+paper/numerics/out/
+__pycache__/
+.DS_Store

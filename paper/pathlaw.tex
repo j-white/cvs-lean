@@ -1,0 +1,373 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[margin=1.1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{microtype}
+\setlength{\emergencystretch}{1em} % lets lines with long \texttt names reflow
+\usepackage{xcolor}
+\usepackage{listings}
+\lstdefinelanguage{Lean}{
+  morekeywords={forall, exists, fun, theorem, lemma, def, structure, instance},
+  sensitive=true,
+  morecomment=[l]{--},
+  morestring=[b]",
+}
+\lstdefinestyle{lean}{
+  language=Lean,
+  basicstyle=\ttfamily\small,
+  keywordstyle=\bfseries\color{blue!55!black},
+  commentstyle=\itshape\color{gray},
+  columns=fullflexible,
+  keepspaces=true,
+  xleftmargin=1.2em,
+}
+\usepackage[colorlinks=true,linkcolor=blue,urlcolor=blue,citecolor=blue,hypertexnames=false]{hyperref}
+
+\theoremstyle{plain}
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{corollary}[theorem]{Corollary}
+
+\theoremstyle{definition}
+\newtheorem{example}[theorem]{Example}
+
+\theoremstyle{remark}
+\newtheorem{remark}[theorem]{Remark}
+
+\newcommand{\C}{\mathbb{C}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\spec}{\operatorname{spec}}
+
+\title{\textbf{The Single-Atom Path Law:}\\[0.3em]
+\large the spectrum of one prime term of Weil's quadratic form on a window}
+\author{\textbf{Jesse White}}
+\date{November 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Connes, Consani and Moscovici study Weil's quadratic form on a window of length $L = \log c$ through its matrix in the Fourier basis of the window and the finite truncations of that matrix. In the matrix, each prime power $q < c$ contributes one divided-difference matrix with weight $\Lambda(q)/\sqrt q$. We record the norm and the spectrum of a single such term, as an operator on $\ell^2(\Z)$. Its norm is $2\cos\bigl(\pi/(m+1)\bigr)\Lambda(q)/\sqrt q$ with $m = \lceil L/\log q\rceil$. Its spectrum is $\Lambda(q)/\sqrt q$ times the union of the spectra of the path graphs $P_m$ and $P_{m-1}$, or of $P_m$ alone when $L/\log q$ is an integer, and every point has infinite multiplicity. The odd sector has the same norm and spectrum, and the largest eigenvalues of the finite truncations increase to the norm. The term is $\Lambda(q)/\sqrt q$ times $T + T^{*}$ for a compressed translation $T$, and the result is a special case of the classical reduction of difference operators on an interval to finite matrices; we give the short proof. For two lags $a < b < L$ with weights $w_a, w_b$ and $L \le \min(2a, 2b-a)$, the same reduction gives the joint norm ${\bigl(w_b + \sqrt{w_b^2 + 4w_a^2}\bigr)/2}$. The norm law for single atoms is formalised in Lean~4 with \texttt{mathlib}; Section~\ref{sec:lean} lists exactly what else is formalised, and in what form.
+\end{abstract}
+
+\section{Introduction}\label{sec:intro}
+
+Connes, Consani and Moscovici~\cite{CCM2025} study Weil's quadratic form~\cite{Weil1952} on test functions supported in a window of length $L = \log c$, through its matrix $\tau(c)$ in the orthonormal basis
+\[
+  e_n(s) = L^{-1/2} e^{2\pi i n s/L}, \qquad n \in \Z,
+\]
+of $L^2(0, L]$, and through its Galerkin truncations $\tau(c, N)$, the finite sections of $\tau(c)$ with indices $|n| \le N$. (In their notation $L = 2\log\lambda$ and the prime cutoff is $\lambda^2$, so $c = \lambda^2$.) The truncations have also been computed to high precision by Groskin~\cite{Groskin2026}. The matrix splits as
+\begin{equation}\label{eq:tau_decomp}
+  \tau(c) \;=\; W_{02} \;-\; W_R \;-\; W_p,
+\end{equation}
+a pole block, an archimedean block and a prime block, and $\tau(c, N)$ splits into the corresponding sections. The prime block is a sum of one term for each prime power $q < c$:
+\begin{equation}\label{eq:Wp}
+  W_p \;=\; \sum_{q < c} w_q\, Q_{y_q}, \qquad w_q = \frac{\Lambda(q)}{\sqrt q}, \qquad y_q = \log q,
+\end{equation}
+where $\Lambda$ is the von Mangoldt function and, for $0 < y < L$ and $\theta = 2\pi y/L$,
+\begin{equation}\label{eq:Q}
+  (Q_y)_{nm} \;=\; \frac{\sin(\theta m) - \sin(\theta n)}{\pi(n-m)} \quad (n \ne m), \qquad (Q_y)_{nn} \;=\; 2\Bigl(1 - \frac yL\Bigr)\cos(\theta n).
+\end{equation}
+This matrix is of the divided-difference type described in~\cite[Proposition~4.1]{CvS2025}. We call $w_q Q_{y_q}$ the \emph{atom} of $q$. (A prime power $q = c$ would have $y_q = L$, and $Q_L = 0$.)
+
+The matrix $\tau(c)$ commutes with the flip $e_n \mapsto e_{-n}$, and so do its sections $\tau(c,N)$, so they split into an even and an odd sector. In the odd sector, with basis $s_k = (e_k - e_{-k})/\sqrt 2$, $k \ge 1$, the atom enters $\tau(c)$ through the matrix
+\begin{equation}\label{eq:atom_odd}
+  (\Delta O_q)_{kl} \;=\; w_q\Bigl(-(Q_{y_q})_{kl} + (r_q)_{kl}\Bigr), \qquad (r_q)_{kl} \;=\; -\frac{\sin(\theta k) + \sin(\theta l)}{\pi(k+l)}, \qquad k, l \ge 1,
+\end{equation}
+with $\theta = 2\pi y_q/L$. This is the odd-sector block of $-w_q Q_{y_q}$, the sign with which the atom enters~\eqref{eq:tau_decomp}.
+
+Numerically, the norms of the sections of $\Delta O_q/w_q$ settle, to many digits, on values that depend only on the interval containing $y_q/L$: $1$, $\sqrt 2$, ${(1+\sqrt 5)/2}$, $\sqrt 3$, and so on. The following theorem explains these values.
+
+\begin{theorem}[Single-atom path law]\label{thm:pathlaw}
+Let $0 < y < L$ and $m = \lceil L/y\rceil$. Then $Q_y$ is the matrix of a bounded self-adjoint operator on $\ell^2(\Z)$, and:
+\begin{enumerate}[label=(\alph*), leftmargin=1.8em]
+  \item its spectrum is
+  \begin{equation}\label{eq:spec}
+    \spec(Q_y) \;=\; \Bigl\{ 2\cos\frac{j\pi}{m+1} \Bigr\}_{j=1}^{m} \;\cup\; \Bigl\{ 2\cos\frac{j\pi}{m} \Bigr\}_{j=1}^{m-1},
+  \end{equation}
+  where the second set is absent when $L/y \in \Z$, and every point of the spectrum is an eigenvalue of infinite multiplicity;
+  \item its norm is $\|Q_y\| = 2\cos\bigl(\pi/(m+1)\bigr)$;
+  \item its compression to the odd sector has the same spectrum and the same norm.
+\end{enumerate}
+In particular, for a prime power $q < c$,
+\begin{equation}\label{eq:path_norm}
+  \|w_q Q_{y_q}\| \;=\; \|\Delta O_q\| \;=\; 2\cos\Bigl(\frac{\pi}{m_q + 1}\Bigr)\frac{\Lambda(q)}{\sqrt q}, \qquad m_q = \Bigl\lceil \frac{\log c}{\log q} \Bigr\rceil .
+\end{equation}
+\end{theorem}
+
+\begin{corollary}\label{cor:range}
+The operator of a single atom is not of finite rank: every non-zero point of its spectrum has infinite multiplicity. Its norm lies in $[w_q, 2w_q)$. It equals $w_q$ exactly when $q \ge \sqrt c$, and it tends to $2w_q$ as $m_q \to \infty$.
+\end{corollary}
+
+\begin{proof}
+For $q < c$ we have $m_q \ge 2$, so $1 \le 2\cos(\pi/(m_q+1)) < 2$, and $m_q = 2$ exactly when $L/2 \le y_q < L$, that is, when $\sqrt c \le q < c$. The rest is Theorem~\ref{thm:pathlaw}(a).
+\end{proof}
+
+\paragraph{What is new here.} The matrix $Q_y$ is the matrix of $T_y + T_y^{*}$, where $T_y$ is translation by $y$ compressed to the window (Lemma~\ref{lem:shift}). This is how the prime term of the windowed explicit formula is written in~\cite{CCM2025}. Once this is known, Theorem~\ref{thm:pathlaw} is a special case of the classical reduction of a difference operator with shifts on an interval to multiplication by finite matrices on subintervals~\cite{Skubachevskii1997, Skubachevskii2016}. It can also be read off from operator theory. $T_y$ is a power partial isometry with $T_y^m = 0$, so its structure follows from Halmos and Wallen~\cite{HalmosWallen1970}, and the upper bound in~(b) also follows from the bound of Haagerup and de la Harpe on the numerical radius of a nilpotent contraction~\cite{HaagerupHarpe1992}. We give the short proof in Section~\ref{sec:proof}. What this note adds is the formula~\eqref{eq:path_norm} for the atoms of $\tau(c)$, whose sections enter $\tau(c,N)$, the odd sector, the corresponding statement for two atoms in short windows (Section~\ref{sec:two_atom}), and a formalisation in Lean~4 (Section~\ref{sec:lean}).
+
+\section{The atom is a compressed translation}\label{sec:shift}
+
+For $0 < y < L$ define $T_y$ on $L^2(0, L]$ by
+\[
+  (T_y f)(s) \;=\; \begin{cases} f(s+y), & 0 < s \le L - y, \\ 0, & L - y < s \le L, \end{cases}
+\]
+so that
+\[
+  (T_y^{*} f)(s) \;=\; \begin{cases} 0, & 0 < s \le y, \\ f(s-y), & y < s \le L. \end{cases}
+\]
+
+\begin{lemma}\label{lem:shift}
+For all $n, m \in \Z$, $\langle e_n, (T_y + T_y^{*}) e_m\rangle = (Q_y)_{nm}$.
+\end{lemma}
+
+\begin{proof}
+Put $\theta = 2\pi y/L$. Then
+\[
+  \langle e_n, T_y e_m\rangle \;=\; \frac1L \int_0^{L-y} e^{2\pi i m (s+y)/L}\, e^{-2\pi i n s/L}\, ds .
+\]
+For $n = m$ this is $(1 - y/L) e^{i\theta n}$. For $n \ne m$ it is $\bigl(e^{i\theta n} - e^{i\theta m}\bigr)/\bigl(2\pi i (m-n)\bigr)$, because $e^{2\pi i (m-n)} = 1$. Adding $\langle e_n, T_y^{*} e_m\rangle = \overline{\langle e_m, T_y e_n\rangle}$ gives $2(1 - y/L)\cos(\theta n)$ on the diagonal and $\bigl(\sin(\theta m) - \sin(\theta n)\bigr)/\bigl(\pi(n-m)\bigr)$ off it.
+\end{proof}
+
+The reflection $(Rf)(s) = f(L - s)$ maps $e_n$ to $e_{-n}$ and satisfies $R T_y R = T_y^{*}$. So it commutes with $T_y + T_y^{*}$, and the odd sector of $Q_y$ is the restriction of $T_y + T_y^{*}$ to the subspace $\{f : f(L-s) = -f(s)\}$.
+
+\section{Proof of Theorem~\ref{thm:pathlaw}}\label{sec:proof}
+
+Write $L/y = (m - 1) + \gamma$ with $\gamma \in (0, 1]$, so that $\gamma = 1$ exactly when $L/y \in \Z$. Every $s \in (0, L]$ is uniquely $s = r + ky$ with $r \in (0, y]$ and $k \in \{0, 1, 2, \dots\}$. The number of $k$ with $r + ky \le L$ is
+\[
+  \ell(r) \;=\; m \quad (0 < r \le \gamma y), \qquad \ell(r) \;=\; m - 1 \quad (\gamma y < r \le y),
+\]
+since $(L - r)/y$ lies in $[m-1, m)$ in the first case and in $[m - 2 + \gamma, m - 1)$ in the second. The map
+\[
+  U : L^2(0, L] \longrightarrow L^2\bigl((0, \gamma y]; \C^{m}\bigr) \oplus L^2\bigl((\gamma y, y]; \C^{m-1}\bigr), \qquad (Uf)(r) = \bigl(f(r + ky)\bigr)_{k=0}^{\ell(r)-1},
+\]
+is unitary, the second summand being absent when $\gamma = 1$. Under $U$, $T_y$ acts on each fibre as the nilpotent shift $(x_0, \dots, x_{\ell-1}) \mapsto (x_1, \dots, x_{\ell-1}, 0)$. Hence
+\begin{equation}\label{eq:decomp}
+  U\,(T_y + T_y^{*})\,U^{-1} \;=\; \bigl(A(P_m) \otimes I\bigr) \;\oplus\; \bigl(A(P_{m-1}) \otimes I\bigr),
+\end{equation}
+where $A(P_k)$ is the adjacency matrix of the path graph on $k$ vertices. The eigenvalues of $A(P_k)$ are $2\cos(j\pi/(k+1))$, $j = 1, \dots, k$, with eigenvectors $\bigl(\sin(jl\pi/(k+1))\bigr)_{l=1}^{k}$. The fibres $L^2(0, \gamma y]$ and $L^2(\gamma y, y]$ are infinite-dimensional when they are present. So the right side of~\eqref{eq:decomp} has spectrum $\spec A(P_m) \cup \spec A(P_{m-1})$, and every point is an eigenvalue of infinite multiplicity. By Lemma~\ref{lem:shift} this proves~(a). The $P_m$ summand is always present, and $2\cos(\pi/(m+1))$ is its largest eigenvalue in absolute value, which proves~(b).
+
+For~(c), note that $L - (r + ky) = (\gamma y - r) + (m - 1 - k)y$. So $R$ maps the long chain with base $r$ onto the long chain with base $\gamma y - r$, in reverse order. Likewise it maps the short chain with base $r$ onto the short chain with base $(1 + \gamma)y - r$. Since $A(P_k)$ commutes with the reversal of the path, the operator in~\eqref{eq:decomp} restricted to $\{Rf = -f\}$ is unitarily equivalent to
+\[
+  \bigl(A(P_m) \otimes I_{L^2(0, \gamma y/2)}\bigr) \;\oplus\; \bigl(A(P_{m-1}) \otimes I_{L^2(\gamma y, (1+\gamma) y/2)}\bigr),
+\]
+which has the same spectrum and norm. Finally, $\Delta O_q$ is the odd-sector block of $-w_q Q_{y_q}$, and the spectrum~\eqref{eq:spec} is symmetric about $0$. So $\Delta O_q$ has spectrum $w_q$ times~\eqref{eq:spec} and norm~\eqref{eq:path_norm}. \qed
+
+\begin{table}[htbp]
+\centering
+\small
+\caption{\textbf{The plateaus.} The normalised norm $\|Q_y\| = 2\cos(\pi/(m+1))$ for consecutive capacities $m = \lceil L/y\rceil$. The left end $y/L = 1/m$ of each range belongs to it: there $L/y = m$, all chains are long, and the spectrum is $\spec A(P_m)$ alone. For example, $q = 5$ at $c = 25$ has $L/y = 2$, norm $w_5$ and spectrum $\{\pm w_5\}$.}\label{tab:staircase}
+\vspace{0.5em}
+\begin{tabular}{c c l c l}
+\toprule
+\textbf{Capacity $m$} & \textbf{Range of $y/L$} & \textbf{Norm} & \textbf{Value} & \textbf{Closed form} \\
+\midrule
+$2$ & $[1/2, 1)$ & $2\cos(\pi/3)$ & $1.00000000$ & $1$ \\
+$3$ & $[1/3, 1/2)$ & $2\cos(\pi/4)$ & $1.41421356$ & $\sqrt{2}$ \\
+$4$ & $[1/4, 1/3)$ & $2\cos(\pi/5)$ & $1.61803399$ & $(1+\sqrt{5})/2$ \\
+$5$ & $[1/5, 1/4)$ & $2\cos(\pi/6)$ & $1.73205081$ & $\sqrt{3}$ \\
+$6$ & $[1/6, 1/5)$ & $2\cos(\pi/7)$ & $1.80193774$ & largest root of $x^3 - x^2 - 2x + 1$ \\
+$7$ & $[1/7, 1/6)$ & $2\cos(\pi/8)$ & $1.84775907$ & $\sqrt{2+\sqrt{2}}$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Finite truncations}\label{sec:truncation}
+
+Let $Q_y^{(N)}$ be the section $|n|, |m| \le N$ of $Q_y$, and $\Delta O_q^{(N)}$ the section $k, l \le N$ of $\Delta O_q$. These are compressions of the operators in Theorem~\ref{thm:pathlaw}. By Cauchy interlacing, their largest eigenvalues are non-decreasing in $N$ and bounded by the norm. Since the sections exhaust $\ell^2$, the largest eigenvalues converge to the top of the spectrum, which is the norm because~\eqref{eq:spec} is symmetric about~$0$.
+
+For integer $q < c$, the Lean development also proves a rate for the unfolded sections: $\|w_q Q_{y_q}\| - \|w_q Q_{y_q}^{(N)}\|$ tends to $0$ faster than any power of $N$ (Section~\ref{sec:lean}). The test vectors are eigenfunctions $f(r + ky) = v_k\, g(r)$ of the top eigenvalue, with $g$ smooth and compactly supported in $(0, \gamma y)$. Such $f$ extend to smooth $L$-periodic functions, so their Fourier coefficients decay faster than any power. We do not prove a rate for the odd-sector sections. Numerically the convergence is fast (Table~\ref{tab:hp_rate}), but it is much slower near the right end of a plateau: at $N = 120$ the deviation is $1.7 \times 10^{-4}$ at $y/L = 0.49$.
+
+\begin{table}[htbp]
+\centering
+\small
+\caption{\textbf{Odd-sector truncations (measured).} The largest eigenvalue $\lambda_{\max}(N)$ of $\Delta O_q^{(N)}/w_q$ at $y/L = 0.28$ ($m = 4$), computed with $60$-digit arithmetic, against the limit $\varphi = 2\cos(\pi/5)$. The deviation is negative, as interlacing requires. The last column is the local decay rate $\frac{1}{20}\log\bigl(\mathrm{dev}(N-20)/\mathrm{dev}(N)\bigr)$.}\label{tab:hp_rate}
+\vspace{0.5em}
+\begin{tabular}{rcc}
+\toprule
+\textbf{$N$} & \textbf{$\lambda_{\max}(N) - \varphi$} & \textbf{Local rate} \\
+\midrule
+$20$ & $-7.84 \times 10^{-9}$ & --- \\
+$40$ & $-1.37 \times 10^{-17}$ & $1.008$ \\
+$60$ & $-2.96 \times 10^{-26}$ & $0.998$ \\
+$80$ & $-5.20 \times 10^{-35}$ & $1.008$ \\
+$100$ & $-8.71 \times 10^{-44}$ & $1.010$ \\
+$120$ & $-1.03 \times 10^{-52}$ & $1.028$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Two atoms in a short window}\label{sec:two_atom}
+
+The same reduction handles two atoms when the window is short enough that the shifts cut it into finitely many pieces.
+
+\begin{theorem}[Two-atom law]\label{thm:two_atom}
+Let $0 < a < b < L$ with
+\begin{equation}\label{eq:two_atom_geom}
+  L \;\le\; 2a \qquad\text{and}\qquad L \;\le\; 2b - a ,
+\end{equation}
+and let $w_a, w_b > 0$. Then
+\[
+  \bigl\| w_a(T_a + T_a^{*}) + w_b(T_b + T_b^{*}) \bigr\| \;=\; \mu \;=\; \frac{w_b + \sqrt{w_b^2 + 4 w_a^2}}{2},
+\]
+and $\max(w_a, w_b) < \mu < w_a + w_b$.
+\end{theorem}
+
+Under~\eqref{eq:two_atom_geom} both lags have capacity $m = 2$. So Theorem~\ref{thm:pathlaw} gives single norms $w_a$ and $w_b$, and the triangle inequality gives $w_a + w_b$. The theorem says the joint norm is strictly smaller.
+
+\begin{proof}
+The inequalities~\eqref{eq:two_atom_geom} order the points
+\[
+  0 \;<\; L - b \;\le\; b - a \;<\; L - a \;\le\; a \;<\; L + a - b \;\le\; b \;<\; L .
+\]
+Consider the pieces
+\[
+  A = (a, L + a - b], \quad B = (0, L - b], \quad C = (b, L], \quad D = (b - a, L - a],
+\]
+\[
+  E = (L - b, b - a], \quad F = (L + a - b, b], \quad G = (L - a, a],
+\]
+where $E$, $F$ and $G$ may be empty. Checking each shift $\pm a$, $\pm b$ that stays in the window gives $A = B + a$, $C = B + b$, $D = C - a$ and $F = E + a$. No other shift of any piece stays inside $(0, L]$. So the operator splits orthogonally into three parts.
+\begin{itemize}[leftmargin=1.8em]
+  \item On the class $\{A, B, C, D\}$ it acts as the weighted path $A - B - C - D$ with links $w_a, w_b, w_a$, tensored with the identity on $L^2(B)$. The path matrix has eigenvalues $\pm\mu$ and $\pm\bigl(\sqrt{w_b^2 + 4w_a^2} - w_b\bigr)/2$.
+  \item On $\{E, F\}$ it acts as a single link $w_a$, with eigenvalues $\pm w_a$.
+  \item It vanishes on $G$.
+\end{itemize}
+Since $\mu^2 = w_b\mu + w_a^2$ with $w_a, w_b > 0$, we have $\mu > w_a$, $\mu > w_b$ and $\mu < w_a + w_b$. Hence the norm is $\mu$.
+\end{proof}
+
+\begin{remark}
+The partition of an interval into classes of subintervals permuted by the shifts is the method of Skubachevskii~\cite{Skubachevskii1997, Skubachevskii2016}. For incommensurable shifts whose boundary orbit is finite it is developed by Ivanova~\cite{Ivanova2023}, and the four-piece configuration above, in the case $L = 2a$, appears in~\cite[\S2]{Ivanova2023}. Theorem~\ref{thm:two_atom} records the resulting norm for the whole region~\eqref{eq:two_atom_geom}.
+\end{remark}
+
+\begin{example}[The primes $2$ and $3$]\label{ex:two_three}
+For $c \in (3, 4]$ the prime block consists of the atoms $q = 2$ and $q = 3$, with $a = \log 2$ and $b = \log 3$. Condition~\eqref{eq:two_atom_geom} reads $c \le 4$ and $c \le 9/2$, so it holds on the whole range. With $w_a = \log 2/\sqrt 2 = 0.4901$ and $w_b = \log 3/\sqrt 3 = 0.6343$, the joint norm is $\mu = 0.9009$, against $w_a + w_b = 1.1244$.
+\end{example}
+
+\section{Formalisation in Lean~4}\label{sec:lean}
+
+The statements listed in Table~\ref{tab:lean_map} are formalised, in the forms stated there, in the namespace \texttt{Cvs.PathLaw} of the repository this note ships with. It consists of 35 files, about $11\,500$ lines, against \texttt{mathlib} v4.36.0. For every theorem in the namespace, \texttt{\#print axioms} reports only \texttt{propext}, \texttt{Classical.choice} and \texttt{Quot.sound}, and there is no \texttt{sorry}. The headline statement is
+\begin{lstlisting}[style=lean]
+Cvs.PathLaw.single_atom_path_lawC :
+  forall (q c : N), 2 <= q -> q < c ->
+  forall (T : AtomSpaceC ->L[C] AtomSpaceC),
+    (forall k l : Z, inner C (lp.single 2 l 1) (T (lp.single 2 k 1))
+                   = (atomEntry q c l k : C)) ->
+    ||T|| = pathLawNorm q c
+\end{lstlisting}
+Here \texttt{atomEntry q c} is the matrix $w_q Q_{y_q}$ of~\eqref{eq:Q} with $L = \log c$, and \texttt{pathLawNorm q c} is the right side of~\eqref{eq:path_norm}. So any bounded operator on $\ell^2(\Z)$ with that matrix has that norm. The statements for $\ell^2(\Z)$ take $q$ and $c$ to be natural numbers.
+
+The formal proof works on the Fourier side. Fourier series identify $\ell^2(\Z)$ with $L^2(\R/\Z)$ and carry $Q_y$ to the masked rotation
+\[
+  (W_\beta f)(z) \;=\; \mathbf 1_{[0,1-\beta)}(z)\, f(z+\beta) \;+\; \mathbf 1_{[\beta,1)}(z)\, f(z-\beta), \qquad \beta = y/L,
+\]
+with $z$ read in $[0,1)$ (\texttt{pathLawW}). On $[0,1)$ this is $T_\beta + T_\beta^{*}$, so it is Lemma~\ref{lem:shift} after rescaling. The statements about $W_\beta$ hold for real $\beta \in (0, 1]$, under the hypotheses of the Lean theorems. In particular, \texttt{spectrum\_\allowbreak pathLawW}, \texttt{not\_\allowbreak finiteDimensional\_\allowbreak eigenspace\_\allowbreak short}, \texttt{spectrum\_\allowbreak compress\_\allowbreak oddSpace\_\allowbreak eq} and \texttt{long\_\allowbreak base\_\allowbreak fraction} assume $L/y \notin \Z$, and \texttt{not\_\allowbreak finiteDimensional\_\allowbreak range} assumes $y/L < 1$. The norm bound is proved by a Schur-type factorisation with a ratio weight built from the path eigenvector. The spectral statements are proved with explicit eigenfunctions and an annihilating polynomial. The odd-sector theorems concern $W_\beta$ compressed to odd functions on the circle. Their identification with the sine-basis matrix~\eqref{eq:atom_odd} is not formalised.
+
+The following are proved in this note but not formalised:
+\begin{itemize}[leftmargin=1.8em]
+  \item Lemma~\ref{lem:shift} on $L^2(0,L]$. Its Fourier-side form is formalised for real $y/L$.
+  \item The $\ell^2(\Z)$ statements of Theorem~\ref{thm:pathlaw} when $y/L$ is not of the form $\log q/\log c$ with natural $q$ and $c$.
+  \item The spectrum when $L/y \in \Z$, on $\ell^2(\Z)$ and in the odd sector. For $W_\beta$ it is \texttt{spectrum\_\allowbreak pathLawW\_\allowbreak deg}.
+  \item The self-adjointness of $Q_y$ on $\ell^2(\Z)$.
+  \item The identification of the odd-sector theorems with $\Delta O_q$.
+  \item The multiplicity statements on $\ell^2(\Z)$ and in the odd sector.
+  \item Corollary~\ref{cor:range}, except the infinite multiplicity and infinite rank of $W_\beta$ listed in Table~\ref{tab:lean_map}.
+  \item Section~\ref{sec:truncation}, except the rate for the norms of the unfolded sections.
+  \item The step from the quadratic form to the operator norm in Theorem~\ref{thm:two_atom}.
+\end{itemize}
+
+\begin{table}[htbp]
+\centering
+\footnotesize
+\caption{\textbf{Lean statements} (namespace \texttt{Cvs.PathLaw}).}\label{tab:lean_map}
+\vspace{0.5em}
+\begin{tabular}{>{\raggedright\arraybackslash}p{0.44\textwidth} >{\ttfamily\raggedright\arraybackslash}p{0.48\textwidth}}
+\toprule
+\normalfont\textbf{Statement} & \normalfont\textbf{Lean theorem} \\
+\midrule
+Theorem~\ref{thm:pathlaw}(b) for the atoms, over $\C$ and over $\R$ & single\_atom\_path\_lawC, single\_atom\_path\_lawR \\
+Theorem~\ref{thm:pathlaw}(a) for the atoms: the spectrum as a set, $L/y \notin \Z$ & spectrum\_single\_atomC \\
+Theorem~\ref{thm:pathlaw}(a)--(b) for the masked rotation & norm\_pathLawW, norm\_pathLawWC, spectrum\_pathLawW, spectrum\_pathLawW\_deg \\
+Infinite multiplicity and infinite rank for $W_\beta$ (Corollary~\ref{cor:range}, for the masked rotation) & not\_finiteDimensional\_eigenspace, not\_finiteDimensional\_eigenspace\_short, not\_finiteDimensional\_range \\
+Theorem~\ref{thm:pathlaw}(c): norm for all $y/L$, spectrum for $L/y \notin \Z$ & norm\_compress\_oddSpace, spectrum\_compress\_oddSpace\_eq \\
+Chain lengths $m$ and $m-1$; for $L/y \notin \Z$, the long fraction $L/y - \lfloor L/y\rfloor$ & chainLength\_eq\_or, long\_base\_fraction \\
+Unfolded sections converge faster than any power of $N$ (Section~\ref{sec:truncation}) & superalgebraic\_sections\_atomCLMC \\
+Theorem~\ref{thm:two_atom}: bound and attainment & TwoAtom.abs\_two\_shift\_le, TwoAtom.two\_shift\_attained \\
+Theorem~\ref{thm:two_atom}: $\max(w_a, w_b) < \mu < w_a + w_b$ & TwoAtom.lt\_jointNorm\_left, TwoAtom.lt\_jointNorm\_right, TwoAtom.jointNorm\_lt\_add \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+For Theorem~\ref{thm:two_atom}, Lean proves two statements about the quadratic form $2w_a (f\star f)(a) + 2w_b (f\star f)(b)$ of the operator, where $(f\star f)(y) = \int f(s) f(s+y)\,ds$ for real $f$ vanishing off $(0, L]$. The form is bounded by $\mu \int f^2$, and the bound is attained by an explicit test function. The operator is self-adjoint and maps real functions to real functions, so its form at $f = u + iv$ is the sum of its forms at $u$ and $v$. Hence these two statements give its norm; this last step is done on paper. The bound uses a weighted Schur test for any finite family of shifts (\texttt{TwoAtom.abs\_sum\_selfConvolution\_le}). The real-scalar form of the single-atom law follows from the complex one by complexification. Along the way the development builds the real trigonometric Hilbert basis of $L^2(\R/\Z, \R)$ (\texttt{trigBasis}).
+
+To check the development, build this note and rerun its numbers:
+\begin{verbatim}
+lake exe cache get   # Mathlib build cache
+lake build           # the Lean development
+cd paper && make     # this note, build/pathlaw.pdf
+make numerics        # the checks of Section 7
+\end{verbatim}
+
+\section{Numerical checks}\label{sec:numerics}
+
+The measured numbers in this note come from three scripts in \texttt{paper/numerics/}, which need Python 3.12 or later with \texttt{numpy} and \texttt{mpmath} (versions pinned in its \texttt{requirements.txt}). Running \texttt{make numerics} from \texttt{paper/} takes about half a minute. It prints each number quoted here next to its reproduced value.
+\begin{itemize}[leftmargin=1.8em]
+  \item \texttt{staircase.py} compares truncated atom norms with Table~\ref{tab:staircase}, on a grid of $y/L$ and at the prime powers $q < 25$ for $c = 25$. It also gives the slow case $y/L = 0.49$ of Section~\ref{sec:truncation}.
+  \item \texttt{truncation.py} computes Table~\ref{tab:hp_rate} at $60$ digits.
+  \item \texttt{two\_atom.py} compares Theorem~\ref{thm:two_atom} with discretised windows. It covers Example~\ref{ex:two_three}, random geometries satisfying~\eqref{eq:two_atom_geom}, and one geometry that violates it.
+\end{itemize}
+
+\section*{Acknowledgements}
+This work was built with large language models as mathematical pair-programming and checking tools: Anthropic's Claude models (Opus~5 and Fable~5, via the Claude Code environment) and Google DeepMind's Gemini models (3.1~Pro and 3.7~Flash, via the Antigravity agentic coding environment). The measured numbers are reproduced by the scripts of Section~\ref{sec:numerics}, and the statements listed in Table~\ref{tab:lean_map} are checked in Lean~4 against \texttt{mathlib}.
+
+\begin{thebibliography}{99}
+\bibitem{CCM2025}
+A.~Connes, C.~Consani, and H.~Moscovici,
+\emph{Zeta spectral triples},
+arXiv:2511.22755 (2025).
+
+\bibitem{CvS2025}
+A.~Connes and W.~D.~van Suijlekom,
+\emph{Quadratic forms, real zeros and echoes of the spectral action},
+arXiv:2511.23257 (2025).
+
+\bibitem{Groskin2026}
+A.~Groskin,
+\emph{High-precision approximation of Riemann zeros via the truncated Weil form},
+arXiv:2605.20224 (2026).
+
+\bibitem{HaagerupHarpe1992}
+U.~Haagerup and P.~de la Harpe,
+\emph{The numerical radius of a nilpotent operator on a Hilbert space},
+Proc. Amer. Math. Soc. \textbf{115} (1992), 371--379.
+
+\bibitem{HalmosWallen1970}
+P.~R.~Halmos and L.~J.~Wallen,
+\emph{Powers of partial isometries},
+J. Math. Mech. \textbf{19} (1970), 657--663.
+
+\bibitem{Ivanova2023}
+E.~P.~Ivanova,
+\emph{Boundary-value problems for differential-difference equations with finite and infinite orbits of boundaries},
+Contemporary Mathematics. Fundamental Directions \textbf{69} (2023), no.~4, 664--675.
+
+\bibitem{Skubachevskii1997}
+A.~L.~Skubachevskii,
+\emph{Elliptic Functional Differential Equations and Applications},
+Birkh\"auser, Basel, 1997.
+
+\bibitem{Skubachevskii2016}
+A.~L.~Skubachevskii,
+\emph{Boundary-value problems for elliptic functional-differential equations and their applications},
+Russian Math. Surveys \textbf{71} (2016), no.~5, 801--906.
+
+\bibitem{Weil1952}
+A.~Weil,
+\emph{Sur les ``formules explicites'' de la th\'eorie des nombres premiers},
+Comm. S\'em. Math. Univ. Lund [Medd. Lunds Univ. Mat. Sem.] \textbf{1952} (1952), Tome Suppl\'ementaire, 252--265.
+\end{thebibliography}
+
+\end{document}
